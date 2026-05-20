@@ -37,4 +37,12 @@ All the code is contained in a single file: **`CDV25.ens`**.
 ## Status
 Completed
 
-**Personal University Project** — 2026
+## How to Compile and Run
+
+### 1. Assemble
+```bash
+88110e -e 0 -o CDV25.bin CDV25.ens
+
+### 1. Execute
+```bash
+mc88110.bat CDV25.bin
