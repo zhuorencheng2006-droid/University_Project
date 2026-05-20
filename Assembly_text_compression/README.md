@@ -38,11 +38,15 @@ All the code is contained in a single file: **`CDV25.ens`**.
 Completed
 
 ## How to Compile and Run
+Follow these steps using your command-line environment to assemble and run the program:
 
 ### 1. Assemble
+Compile the assembly source code into a runnable binary file using the `-e 0` entry point configuration flag:
 ```bash
 88110e -e 0 -o CDV25.bin CDV25.ens
-
-### 1. Execute
+```
+### 2. Execute
+Load and run the generated binary executable inside the architecture emulator environment:
 ```bash
 mc88110.bat CDV25.bin
+```
