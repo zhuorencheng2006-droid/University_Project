@@ -17,9 +17,6 @@ Welcome to my academic project repository! This space showcases a curated select
 | Project Name | Category | Primary Tech Stack | Key Highlights | Link |
 | :--- | :--- | :--- | :--- | :--- |
 | **Text Compressor & Decompressor** | Ensamblador | Motorola 88110 Assembly | Implemented custom bit-maps, dictionary sliding window, and strict stack discipline. | [View Project](./Assembly_text_compression) |
-| **Java Codec Engine** | Java / Core | Java SE | Built a custom encoding/decoding system using object-oriented principles and stream I/O. | [Go to Folder](./Java_Codec_Placeholder) |
-| **Full-Stack Web Application** | Web Dev | JS / HTML / CSS | Developed a responsive web portal communicating seamlessly with a backend architecture. | [Go to Folder](./Web_Project_Placeholder) |
-| **Relational Database System** | SQL & DB | SQL / PostgreSQL / MySQL | Designed entity-relationship diagrams, complex joins, subqueries, and structural optimization. | [Go to Folder](./SQL_Project_Placeholder) |
 
 ---
 
@@ -31,17 +28,8 @@ Welcome to my academic project repository! This space showcases a curated select
 * **Current Status:** Fully operational with full validation script loops (`Verifica`).
 * *For detailed compilation and execution instructions, please check the [Sub-Folder README](./Assembly_text_compression/README.md).*
 
-### 2. ☕ Java Codec Project
-* **Course:** [Insert Course Name, e.g., Programación Orientada a Objetos]
-* **Objective:** [简短描述你的Java项目干了什么，例如：实现安全的文件加密与格式转换编解码机制]
-* **Key Feature:** Exceptional handling of binary file streams and deep utilization of Polymorphism.
-
-### 3. 🌐 Web & SQL Integrated Platforms
-* **Objective:** Bridging data persistence with user-friendly web interfaces.
-* **Database Design:** Normalized to 3NF (Third Normal Form) to eliminate data redundancy, handled through advanced SQL scripts.
-
 ---
 
 ## 👥 About Me
 * **University:** Universidad Politécnica de Madrid (UPM) 🇪🇸
-* **Contact / Profile:** [Your Email / LinkedIn Link]
+* **Contact:** 、zhuorencheng2006@gmail.com
