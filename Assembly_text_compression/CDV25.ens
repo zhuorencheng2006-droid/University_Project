@@ -1,0 +1,675 @@
+	LEA:  	    	MACRO  (reg, ETIQ)
+					or     reg, r0,  low(ETIQ)
+					or.u   reg, reg, high(ETIQ)
+					ENDMACRO
+
+	PUSH:     		MACRO(reg)
+					subu r30, r30, 4      
+					st reg, r30, 0        
+					ENDMACRO
+				
+	POP:  	    	MACRO(reg)
+					ld reg, r30, 0       
+					addu r30, r30, 4      
+					ENDMACRO
+					
+				
+	;DATOS
+	org 0x2000
+	desc:			data 0
+	org 0x3000
+	comprdo:		data 0
+	;PRUEBALONGCAD
+	org 0x4000
+	cad:	   		data "ejemplo cadena\0"	
+	;COINCIDECAD
+	cadena1:		data "ejemplo\0"
+	cadena2:		data "ejempl0\0"
+	;PRUEBABUSCA
+	ref:	   		data "*2345*78*0\0"
+	c:				data "0"
+	from:			data 55
+	to:				data 10
+	;PONEBITA1
+	bit:	   		data 0xFF
+	position:       data 3			
+	;LEEBIT
+	bits:	   		data 0x24
+	pos:        	data 2
+	;DESCOMP
+	com:			data 0x0b010044, 0x10102400, 0x74004000, 0x20736572
+					data 0x73697274,0x04000274,0x00016769, 0x6d6f6304
+					data 0x00046e65,0x206f6704,0x75206e65, 0x61060018
+					data 0x65202c6c,0x7270206c,0x72656d69, 0x2006000c
+					data 0x2e657571,0x00002e2e
+	;COMP
+	texto:			data "0123456789\0"
+	;VERI
+	org 0x9000	
+	textoVe: 		data "0123456789\0"
+	long1:			data 0
+	long2: 			data 0
+	PPAL:          ;pruebaLong: 	
+					or r30,r0,0x1000
+					or r5,r0,r0
+					LEA(r5, cad)
+					PUSH(r5)
+					bsr LongCad
+					or r30,r30,4
+				
+					;PRUEBACOINCIDECAD
+					or r5,r0,r0
+					or r6,r0,r0
+					LEA(r5,cadena1)
+					LEA(r6,cadena2)
+					PUSH(r5)
+					PUSH(r6)
+					bsr CoincidenCad
+					or r30,r30,8
+					
+					;PRUEBABUSCA
+					or r5,r0,r0
+					LEA(r5,ref)
+					LEA(r2,c)
+					LEA(r3,from)
+					LEA(r4,to)
+					ld r2,r2,0
+					ld r3,r3,0
+					ld r4,r4,0
+					PUSH(r4)
+					PUSH(r3)
+					PUSH(r5)
+					PUSH(r2)
+					bsr BuscaCar
+					or r30,r30,20
+				
+					;PRUEBAPONEPIT1
+					or r5,r0,r0
+					or r20,r0,r0
+					LEA(r20,bit)
+					LEA(r5,position)
+					ld r5,r5,r0
+					PUSH(r5)
+					PUSH(r20)
+					bsr PoneBitA1
+					or r30,r30,8
+	
+					
+					;LEEBIT
+					or r5,r0,r0
+					or r20,r0,r0
+					LEA(r20,bits)
+					LEA(r5,pos)
+					ld r5,r5,r0
+					PUSH(r5)
+					PUSH(r20)
+					bsr LeeBit
+					or r30,r30,8
+					
+					;PRUEBADESC
+					or r5,r0,r0
+					or r6,r0,r0
+					LEA(r5,com)
+					LEA(r6,desc)
+					PUSH(r6)
+					PUSH(r5)
+					bsr Descomprime
+					or r30,r30,8
+					
+					;PRUEBACOM
+					or r5,r0,r0
+					or r6,r0,r0
+					LEA(r5,texto)
+					LEA(r6,comprdo)
+					PUSH(r6)
+					PUSH(r5)
+					bsr Comprime
+					or r30,r30,8
+					
+					;VERI
+					or r5,r0,r0
+					or r6,r0,r0
+					or r7,r0,r0
+					LEA(r5,texto)
+					LEA(r6,long1)
+					LEA(r7,long2)
+					PUSH(r7)
+					PUSH(r6)
+					PUSH(r5)
+					bsr Verifica
+					or r30,r30,12
+					stop
+					
+					
+	BuscaCar:		PUSH(r1)
+					PUSH(r31)
+					or r31,r30,r30 
+					ld r4,r31,20 ;cargamos to
+					ld r3,r31,16 ;cargamos from
+					ld r21,r31,12 ;cargamos c
+					ld r9,r31,8	;cargamos ref
+					subu r8,r4,1 ;restamos to-1
+					or r29,r0,r4 ;inicializamos en r29 el valor de to en caso de no encontrar 
+	
+	;bucle para buscar el caracter
+	sigue_busca:	ld.bu r6,r21,r3 ;cargamos el primer caracter
+					cmp r7,r6,r9 ;vemos si es el caracter que queremos buscar
+					bb1 eq,r7,encontrado ;si es lo encontramos
+					cmp r7,r3,r8 ;vemos si ha llegado al rango donde queremos buscar 
+					bb1 gt,r7, no_encontrado ;si es mayor no lo hemos encontrado
+					addu r3,r3,1 ;sumamos el contador de from
+					br sigue_busca 
+
+	encontrado:  	or r29,r0,r3 ;cargamos el contador de from en r29 
+	no_encontrado:	POP(r31) 
+					POP(r1)
+					jmp(r1)	;direccion de retorno
+
+
+	CoincidenCad:	PUSH(r1)
+					PUSH(r31)
+					or r31,r30,r30 
+					ld r20,r31,12 ;cargamos la cadena1
+					ld r21,r31,8 ;cargamos la cadena2
+					or r29,r29,r0 ;inicializamos contador
+					or r3,r0,r0;inicializamos contador
+					or r9,r0,r0 ;inicializamos contador
+					
+	;bucle para contar cuantas caracteres identicas hay	
+	sigueCoincide:	ld.bu r2,r20,r3 ;cargamos el caracter de la cadena1
+					ld.bu r4,r21,r3 ;cargamos el caracter de la cadena2
+					cmp r7,r4,r2 ;comparamos si los dos caracteres son iguales
+					bb0 eq,r7,NoCoincide ;en caso de que sea distinto, hemos terminado
+					cmp r7,r2,r0 ;vemos si la cadena1 ha llegado al final
+					bb1 eq,r7,NoCoincide ;si es, hemos terminado
+					cmp r7,r4,r0 ;vemos si la cadena2 ha llegado al final
+					bb1 eq,r7,NoCoincide ;si es, hemos terminado
+					addu r3,r3,1;avanzamos contador
+					addu r9,r9,1;avanzamos contador
+					br sigueCoincide
+					
+	NoCoincide:		or r29,r3,r9 ;guardamos el numero de caracter iguales en r29
+					POP(r31)
+					POP(r1)
+					jmp(r1)
+					
+					
+	LongCad:		PUSH(r1)
+					PUSH(r31)
+					or r31,r30,r30
+					ld r20,r31,8 ;cargamos la cadena
+					or r29,r0,r0 ;inicializamos el contador
+					
+	;bucle para contar la cadena
+	sigueLong:		ld.bu r3,r20,r29 ;cargamos el caracter
+					cmp r7,r3,r0 ;vemos si el caracter es el terminador
+					bb1 eq,r7,finLong ;si es, hemos terminado
+					addu r29,r29,1 ;avanzamos contador
+					br sigueLong
+					
+	finLong:		POP(r31)
+					POP(r1)
+					jmp(r1)
+				
+				
+	
+	PoneBitA1:  	PUSH(r1)
+					PUSH(r31)
+					or r31,r30,r30
+					ld r5,r31,12 ;cargamos la posiciion
+					ld r20,r31,8 ;cargamos el bits
+					divu r4,r5,8 ; dividimos entre 8 la pos
+					ld.bu r6,r20,r4 ;cargamos el byte correspondiente
+					mulu r9,r4,8 ;multiplicamos 8
+					subu r3,r5,r9 ;restamos para obtener el resto
+					addu r22,r0,7 ;
+					subu r3,r22,r3 ;restamos 7 al resto
+					addu r8,r0,1 ;sumamo 1
+					
+	;bucle para poner un 1 en esa posicion
+	sigue_move:		cmp r7,r3,r0 ;poner un 1 en la posicion que queremos
+					bb1 eq,r7,fin_move 
+					mulu r8,r8,2 ;movemos el bit 1 una posicion a la izquierda
+					subu r3,r3,1
+					br sigue_move
+				
+	fin_move:		or r6,r6,r8 ;sumamos el byte con el byte que tiene un 1 en pos
+					st.b r6,r20,r4 ;guardamos el byte con el 1 en la cadena de bits
+					POP(r31)
+					POP(r1)
+					jmp(r1)
+
+	
+	Comprime:		PUSH(r1)
+					PUSH(r31)
+					or r31,r30,0
+					ld r20,r31,8 ;cargamos el texto
+					ld r21,r31,12 ;cargamos la direccion donde se guardara el texto comprimido
+					PUSH(r20)
+					bsr LongCad
+					POP(r20)
+					or r22,r29,r0 ;longitud del texto
+					st.b r22,r21,0 ;guardamos la longitud en la cabecera
+					rot r10,r22,<8>;rotamos para obtener el segundo byte
+					st.b r10,r21,1;guardamos el segundo byte en la cabecera
+					or r11,r0,1 ;obtenemos el M1
+					st.b r11,r21,2;guardamo el M1
+					addu r6,r22,3 ;sumamos 3 a la longitud
+					subu r3,r0,4 ;obtenemos 0xFFFFFFCC
+					and r6,r6,r3 ;para que sea multiplo de 4
+					subu r30,r30,r6 ;reservamos en la pila el espacio necesario(PilaZona3)
+					or r23,r30,r0 ;obtenemos la direccion de PilaZona3
+					or r24,r30,r0 ;obtenemos la direccion de PilaZona3
+					or r5,r0,r0	;contador de texto
+					
+	;bucle para copiar los primeros 8 caracteres
+	sigue8:			cmp r7,r5,0x8 ; copiamos los primeros 8 caracteres directamente
+					bb1 eq,r7,fin8
+					ld.bu r4,r20,r5 ;cargar el caracter
+					st.b r4,r24,0 ;guardar en PilaZona3
+					addu r5,r5,1 ;avanzamos contador
+					addu r24,r24,1 ;avanzamos PilaZona3
+					br sigue8
+					
+	fin8:			or r8,r0,r0; numBit
+	
+	;bucle principal para la compresion del texto
+	sigueCom:		cmp r7,r5,r22 ;vemos si el contador ha llegado a la longitud del texto
+					bb1 ge,r7,finCom ;si es, hemos terminado de comprimir
+					divu r2,r8,8 ;dividimos entre 8
+					mulu r3,r2,8 ;multiplicamos por 8
+					subu r3,r3,r8 ;obtenemos el resto
+					cmp r7,r3,r0 ;vemos si es multiplo de 8
+					bb1 ne,r7,noMul8 ;si no es, no es necesario poner el byte 0
+					addu r2,r2,5 ;r2 la posicion donde estamos en el mapa de bits, le sumamos 5 de la cabecera
+					st.b r0,r21,r2 ;guardams un 0 en esa posicion para evitar basura
+	noMul8:			subu r30,r30,4 ;obtenemos una direccion 
+					or r12,r30,r30
+					;llamamos a BuscaMax
+					PUSH(r22) ;guardamos valores importantes
+					PUSH(r23)
+					PUSH(r24)
+					PUSH(r8)
+					PUSH(r21)
+					PUSH(r12) ;jj
+					PUSH(r5) ;posicion
+					PUSH(r20) ;texto
+					bsr BuscaMax
+					POP(r20) ;restauramos los valores
+					POP(r5)
+					POP(r12)
+					POP(r21)
+					POP(r8)
+					POP(r24)
+					POP(r23)
+					POP(r22)
+					addu r30,r30,4	;limpiamos 
+					ld r14,r12,0 ;obtenemos la posicion donde se repite
+					cmp r7,r29,4 ;vemos si la longitud encontrada es mayor que 4
+					bb1 ge,r7,comprimir ;si es comprimimos
+					ld.bu r4,r20,r5;en caso no,cogemos el caracter
+					st.b r4,r24,0 ;y guardamos directamente en la pila
+					addu r5,r5,1 ;avanzamos contador
+					addu r24,r24,1 ;avanzamos PilaZona3
+					addu r8,r8,1 ;avanzamos numBit
+					br sigueCom
+	comprimir:		st.b r14,r24,0 ;guardamos la poscion donde se repite en la pila
+					rot r10,r14,<8>; rotamos para obtener el segundo byte
+					addu r24,r24,1 ;avanzamos PilaZona3
+					st.b r10,r24,0 ;guardamos el segundo byte
+					addu r24,r24,1 ;avanzamos PilaZona3
+					st.b r29,r24,0 ;guardamos la longitud
+					;llamamos a PoneBitA1
+					addu r3,r21,5 ;obtener la direccion del mapa de bits
+					PUSH(r5) ;guardamos valores importantes
+					PUSH(r22)
+					PUSH(r23)
+					PUSH(r24)
+					PUSH(r21)
+					PUSH(r20)
+					PUSH(r8) ;posicion donde poner el 1
+					PUSH(r3) ;direccion mapa bits
+					bsr PoneBitA1
+					POP(r3)	;restauramos valores importantes
+					POP(r8)
+					POP(r20)
+					POP(r21)
+					POP(r24)
+					POP(r23)
+					POP(r22)
+					POP(r5)
+					addu r5,r5,r29 ;avanzamos el contador con la longitud
+					addu r24,r24,1 ;avanzamos PilaZona3
+					addu r8,r8,1 ;avanzamos numBit
+					br sigueCom
+					
+	finCom:			divu r2,r8,8 ;dividimos entre 8
+					mulu r3,r2,8 ;multiplicamos
+					subu r3,r8,r3 ;cogemos el resto
+					cmp r7,r3,r0 ;vemos si es multiplo de 8
+					bb1 eq,r7,exacto
+					addu r2,r2,1 ; si no es exacto sumarle 1
+	exacto:			addu r2,r2,5 ;sumamos un 5 para saber la posicion donde empieza el texto comprimido
+					st.b r2,r21,3;guardamos en la cabecera
+					rot r10,r2,<8>;rotamos
+					st.b r10,r21,4;guardamos el segundo byte
+					addu r25,r0,r2;posicion donde poner los textos
+					
+	;bucle para copiar los caracteres de la pila en el texto comprimido
+	copiaF:			cmp r7,r23,r24;vemos si r23(comienzo de PilaZona3) es igual a r24(final de PilaZona3)
+					bb1 eq,r7,finP ;si es, hemos terminado
+					ld.bu r4,r23,0 ;cargamos el caracter
+					st.b r4,r21,r25 ;guardamos
+					addu r25,r25,1 ;avanzamos contador
+					addu r23,r23,1 ;avanzamos PilaZona3
+					br copiaF
+					
+	finP:			or r29,r0,r25 ;longitud total de la compresion(cabecera+mapa bits+compresion)
+					or r30,r31,0
+					POP(r31)
+					POP(r1)
+					jmp(r1)
+		
+		
+	Descomprime:	PUSH(r1)
+					PUSH(r31)
+					or r31,r30,r0
+					ld r20,r31,8 ;cargamos el texto comprimido
+					ld r21,r31,12 ;cargamos la direccion donde se podra el texto descomprimido
+					ld.bu r2,r20,3 ;cargamos la posicion donde empieza el texto
+					ld.bu r3,r20,4  ;el segundo byte
+					mulu r3,r3,256 ;multiplicamos por 256
+					addu r2,r2,r3 ;sumamos pra obtener la posicion correcta
+					or r29,r0,r0 ;contador en el texto descomprimido
+					or r10,r2,r0 ;contador en el texto comprimido
+					addu r3,r2,8 ;posicion donde incluye los primeros 8 caracteres
+
+	;bucle para copiar los primeros 8 caracteres
+	sigue_8des:		cmp r7,r10,r3 ;vemos si ha llegado
+					bb1 eq,r7,fin_8des ;si es, hemos terminado
+					ld.bu r4,r20,r10 ;cargamos el caracter
+					st.b r4,r21,r29 ;guardamos
+					addu r29,r29,1 ;avanzamos
+					addu r10,r10,1 ;avanzamos
+					br sigue_8des
+					
+	fin_8des:		or r8,r0,0x5 ;saltamos la cabecera
+	sigue_byte:		addu r3,r20,r8 ;direccion del mapa de bits
+					or r5,r0,r0	;contador bits
+	
+	;bucle principal para la descompresion
+	sigue_bits:		ld.bu r14,r20,0 ;cogemos la longitud del texto
+					ld.bu r15,r20,1 ;segundo byte de la longitud
+					mulu r15,r15,256 ;multiplicamos por 256
+					addu r14,r14,r15 ;sumamos para obtener la longitud correcta
+					cmp r7,r29,r14 ;comparamos si hemos llegado al final del texto
+					bb1 eq,r7,findes ;si es, hemos terminado la descompresion
+					cmp r7,r5,0x8 ;vemos si el bits ha llegado a 8
+					bb1 eq,r7,cambiar_byte ; si es hay que cambiar al siguiente byte del mapa de bits
+					;llamamos a LeeBit
+					PUSH(r29) ;guardamos valores importantes				
+					PUSH(r8)
+					PUSH(r20)
+					PUSH(r21)
+					PUSH(r2)
+					PUSH(r10)
+					PUSH(r5);posicion donde se quiere leer
+					PUSH(r3);direccion del byte en el mapa de bits
+					bsr LeeBit
+					POP(r3);restauramos valores importantes
+					POP(r5)
+					POP(r10)
+					POP(r2)
+					POP(r21)
+					POP(r20)
+					POP(r8)
+					cmp r7,r29,r0 ;vemos si es 0
+					bb1 eq,r7,es_0; si es, copiamos directamente
+					POP(r29)
+					ld.bu r11,r20,r10 ;si no es, hay que coger la posicion donde se repite
+					addu r10,r10,1 ;avanzamos
+					ld.bu r12,r20,r10;cogemos el segundo byte de la posicion 
+					mulu r12,r12,256;multiplicamos por 256
+					addu r11,r12,r11 ;sumamos para obtener la posicion correcta
+					addu r10,r10,1;avanzamos
+					ld.bu r12,r20,r10;longitud de la repeticion
+					addu r10,r10,1;avanzamos
+					or r13,r0,r0;contador 
+					
+	;bucle para copiar la cadena repetida
+	sigue_Cop:		cmp r7,r13,r12;vemos si ha llegado a la longitud de repeticion
+					bb1 eq,r7,fin_Cop ;si es hemos terminado de copiar
+					ld.bu r4,r21,r11 ;cargamos el valor desde la posicion donde se repite
+					st.b r4,r21,r29	;guardamos
+					addu r29,r29,1 ;avanzamos
+					addu r11,r11,1 ;avanzamos
+					addu r13,r13,1 ;avanzamos
+					br sigue_Cop
+					
+	;en caso de no hay repeticion
+	es_0:			POP(r29) ;restauramos el contador de descompresion
+					ld.bu r4,r20,r10 ;cargamos el caracter 
+					st.b r4,r21,r29 ;guardamos
+					addu r10,r10,1 ;avanzamos
+					addu r29,r29,1 ;avanzamos
+	fin_Cop:		addu r5,r5,1  ;avanzamos
+					br sigue_bits
+	cambiar_byte:	addu r8,r8,1
+					br sigue_byte
+	findes:			st.b r0,r21,r29 ;guardamos el terminador al final del texto descomprimido y en r29 sera la longitud del texto
+					or r30,r31,0
+					POP(r31)
+					POP(r1)
+					jmp(r1)
+	
+	
+	LeeBit:  		PUSH(r1)
+					PUSH(r31)
+					or r31,r30,r30
+					ld r5,r31,12 ;cargamos el byte
+					ld r20,r31,8 ;cargamos la posicion
+					or r29,r0,r0 ;inicializamos a 0 en caso de que sea un 0
+					divu r4,r5,8 ;dividimos entre 8 para buscar el byte concreto
+					ld.bu r6,r20,r4;cargamos ese byte
+					mulu r9,r4,8 ;multiplicamos por 8
+					subu r3,r5,r9 ;cogemos el resto
+					addu r22,r0,7 ;sumamos 7
+					subu r3,r22,r3 ;y restamos al resto para saber la posicion correcta
+					addu r8,r0,1 ;sumamos uno para mover
+	
+	;bucle para poner un 1 en la poscion que queremos
+	sigue_lee:		cmp r7,r3,r0 ;vemos si hemos llegado
+					bb1 eq,r7,fin_lee;si es,hemos terminado
+					mulu r8,r8,2;movemos el 1 a la izquierda
+					subu r3,r3,1 ;restamos
+					br sigue_lee
+					
+	fin_lee:		and r6,r6,r8 ;multiplicamos para obtener lo que hay en esa posicion
+					cmp r7,r6,r0 ; si es 0, hemos terminado
+					bb1 ne,r7,es
+					br finleer
+	es:				addu r29,r29,1 ;si no es, ponemos un 1, y terminamos
+	finleer:       	POP(r31)
+					POP(r1)
+					jmp(r1)
+	
+	
+	Verifica:		PUSH(r1)
+					PUSH(r31)
+					or r31,r30,r0
+					ld r20,r31,8;cargamos el texto
+					PUSH(r20)
+					bsr LongCad
+					POP(r20)
+					or r22,r29,r0;longitud del texto
+					ld r16,r31,12 ;direccion de long1
+					st r22,r16,r0 ;guardamos la longitud
+					addu r2,r22,7 ;sumamos 7 
+					divu r2,r2,8 ;dividimos entre 8
+					subu r2,r2,1 ;restamos 1
+					addu r2,r2,5 ;sumamos 5 
+					addu r2,r2,r22;sumamos la longitud del texto original
+					subu r3,r0,4 ;obtenemos 0xFFFFFFCC
+					addu r2,r2,3 ;sumamos 3
+					and r2,r2,r3 ;alineamos a multiplo de 4
+					subu r30,r30,r2 ;reservamos el espacio necesario para pilaCom
+					or r23,r30,r0;pilaCom
+					addu r6,r22,3;sumamos a 3
+					and r6,r6,r3 ;alineamos a multiplo de 4
+					subu r30,r30,r6 ;reservamos el espacio necesario pra PilaDes
+					or r24,r30,r0;pilaDes
+					;llamamos a comprime
+					PUSH(r16);guardamos valores importantes
+					PUSH(r24)
+					PUSH(r23);direccion donde se guardara el texto comprimido
+					PUSH(r20);texto a comprimir
+					bsr Comprime
+					POP(r20);restauramos valores importantes
+					POP(r23)
+					POP(r24)
+					POP(r16)
+					;llamamos a descomprime
+					PUSH(r16);guardamos valores importantes
+					PUSH(r20)
+					PUSH(r24);direccion donde se guardara el texto descomprimido
+					PUSH(r23);texto a descomprimir
+					bsr Descomprime
+					POP(r23);restauramos valores importantes
+					POP(r24)
+					POP(r20)
+					POP(r16)
+					or r5,r29,r0; longitud del texto descomprimido
+					ld r22,r16,0 ;cogemos la longitud original
+					ld r15,r31,16;cogemos la direccion de long2
+					st r5,r15,r0 ;guardamos la longitud del texto comprimido en long2
+					cmp r7,r5,r22;comparamos si son iguales
+					bb1 ne,r7,distinto; si no es vamos a distinto
+					;llamamos a CoincidenCad
+					PUSH(r15);guardamos valores importantes
+					PUSH(r16)
+					PUSH(r23)
+					PUSH(r24) ;cadena1
+					PUSH(r20) ;cadena2
+					bsr CoincidenCad
+					POP(r20);restauramos valores importantes
+					POP(r24)
+					POP(r23)
+					POP(r16)
+					POP(r15)
+					ld r22,r16,0;cogemos la longitud
+					cmp r7,r29,r22;vemos si son iguales en el contenido
+					bb1 eq,r7,igual ; si es ,bien
+					br distinto2 ;si no, mal
+	igual:			or r29,r0,r0 ;devolvemos un 0 cuando descomprime esta bien
+					br finVef
+	distinto2:		or r29,r0,r0
+					subu r29,r0,2 ;devolvemos un -2 en caso de que los contenidos son distindo
+					br finVef 
+	distinto:		or r29,r0,r0
+					subu r29,r0,1 ;devolvemos un -1 en caso de que difieren las longitudes dado por descomprime y longitud original
+	finVef:			or r30,r31,0
+					POP(r31)
+					POP(r1)
+					jmp(r1)
+	
+	
+	
+	;
+	; Debe incorporar este fichero con TODAS sus líneas, sin modificar
+	; ninguna de ellas, al final de su archivo CDV24.ens
+	;
+	; Este aviso se refiere también a las líneas de comentario
+	; 
+	;
+	;; Grupo:    zhuoren.ch - Wed Oct 22 15:21:54 CEST 2025
+
+	BuscaMax:
+				PUSH (r1)
+				PUSH (r31)
+				or   r31, r30, 0
+				or   r28, r0, 0x3131
+				PUSH (r28)
+
+				ld   r10, r31, 8;  REF
+				ld   r11, r31, 12; MAX
+				ld   r12, r31, 16; Dir(JJ)
+
+				sub  r5, r0, 1		; guarda -1 en *JJ por si no se
+				st   r5, r12, 0		; encuentran coincidencias
+
+				addu r27, r0, r0  ; P
+				addu r28, r0, r0  ; L
+
+	BucBM:
+				ld.bu r20, r10, r11	; C=REF(max)
+
+							; Reserva registros que
+							; necesita conservar
+				PUSH (r28) 	    	; L
+				PUSH (r11)	    	; MAX
+
+									; Parámetros de BuscaCar
+				PUSH (r27)	    	; P
+				PUSH (r10)	    	; REF
+				PUSH (r20)	   	; C
+				bsr  BuscaCar
+				POP  (r20)
+				POP  (r10)
+				POP  (r27)
+
+				POP  (r11)		; Recupera registros
+				POP  (r28)	        ; salvaguardados
+
+				cmp  r5, r29, r11	; nuevo P es >= MAX ??
+				bb1  hs, r5, finBM
+				addu r27, r29, r0	; P = nuevo P
+	
+				addu r13, r10, r27	; *REF(P)
+				addu r14, r10, r11 	; *REF(max)	
+
+				PUSH (r11)     		; Reserva registros que
+				PUSH (r10)		; necesita conservar
+				PUSH (r28)
+				PUSH (r27)
+				
+				PUSH (r14)		; Parámetros de CoincidenCad
+				PUSH (r13)
+				bsr  CoincidenCad
+				POP  (r13)
+				POP  (r14)
+				
+				POP  (r27)		; Recupera registros
+				POP  (r28)		; salvaguardados
+				POP  (r10)
+				POP  (r11)
+
+				cmp r5, r29, r28	; Comprueba si longitud > L
+				bb1 le, r5, contBM	; Si no lo es, continúa
+				cmp r5, r29, 255	; Comprueba si longitud > 255
+				bb1 le, r5, noLimBM	; Si no lo es, continúa
+				addu r29, r0, 255	; Si lo es, limita su valor a 255
+	
+	noLimBM:
+				addu r28, r29, r0	; actualiza L
+				ld   r12, r31, 16	; Dir(JJ)
+				st   r27, r12, r0	; actualiza P en *JJ
+				bb1 ge, r5, finBM	; Si coincidencia >= 255 termina
+	contBM: 
+				addu r27, r27, 1	; Pasa al siguiente carácter
+				cmp  r5, r27, r11	; Es P>=max ?
+				bb1  hs, r5, finBM
+	
+				br   BucBM   		; Nueva búsqueda del primer carácter
+
+	finBM:
+				addu r29, r28, r0	; asigna L al valor de retorno r29
+				  
+				or   r27, r0, 0xB4A
+				POP  (r28)
+
+				or   r30, r31, 0
+				POP  (r31)
+				POP  (r1)
+				jmp  (r1)
+	;; Grupo:    zhuoren.ch
+
