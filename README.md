@@ -32,4 +32,4 @@ Welcome to my academic project repository! This space showcases a curated select
 
 ## 👥 About Me
 * **University:** Universidad Politécnica de Madrid (UPM) 🇪🇸
-* **Contact:** 、zhuorencheng2006@gmail.com
+* **Contact:** zhuorencheng2006@gmail.com
